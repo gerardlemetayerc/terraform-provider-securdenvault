@@ -62,7 +62,7 @@ func Provider() *schema.Provider {
 		},
 		ConfigureFunc: providerConfigure,
 		DataSourcesMap: map[string]*schema.Resource{
-			"vault_password":      datasourceVaultPassword(),
+			"securden_password":      datasourceVaultPassword(),
 		},
 	}
 }
