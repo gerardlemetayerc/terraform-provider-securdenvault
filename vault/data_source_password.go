@@ -24,6 +24,7 @@ func datasourceVaultPassword() *schema.Resource {
 			},
 			"password": {
 				Type:        schema.TypeString,
+				Sensitive:   true,
 				Computed:    true,
 				Description: "Password of the account.",
 			},
