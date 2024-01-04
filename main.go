@@ -7,6 +7,6 @@ import (
 
 func main() {
 	plugin.Serve(&plugin.ServeOpts{
-		ProviderFunc: device42.Provider,
+		ProviderFunc: vault.Provider,
 	})
 }
