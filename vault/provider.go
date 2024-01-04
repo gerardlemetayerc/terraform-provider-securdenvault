@@ -83,7 +83,7 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 		return nil, fmt.Errorf("no token was provided")
 	}
 
-	timeout := d.Get("timeout").(int)
+	timeout = d.Get("timeout").(int)
 
 	client := resty.New()
 	client.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: tlsInsecure})

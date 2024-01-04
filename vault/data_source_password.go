@@ -3,7 +3,6 @@ package vault
 import (
 	"fmt"
 	"log"
-	"strconv"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -40,7 +39,7 @@ func datasourceVaultPasswordRead(d *schema.ResourceData, m interface{}) error {
 	client.SetDebug(true)
 	var resp datasourceD42BusinessAppApi
 	_, err := client.R().
-		SetResult(&datasourceD42BusinessAppApi).
+		SetResult(&resp).
 		Get(uri)
 
 	if err != nil {
@@ -49,7 +48,7 @@ func datasourceVaultPasswordRead(d *schema.ResourceData, m interface{}) error {
 		return nil
 	}
 
-	log.Printf("[DEBUG] datasourceVaultPasswordRead - Result: %#v", resp.Result())
+	log.Printf("[DEBUG] datasourceVaultPasswordRead - Result: %#v", resp)
 	if len(resp.Password) == 1 {
 		d.SetId(accountId)
 		d.Set("password", resp.Password)
