@@ -50,6 +50,34 @@ jobs:
         zip "terraform-provider-securdenvault_${version}_windows_386.zip" "terraform-provider-securdenvault_${version}_windows_386.exe"
         rm "terraform-provider-securdenvault_${version}_windows_386.exe"
 
+        echo "---- Signing documents"
+        echo '{
+          "version": 1,
+          "metadata": {
+            "protocol_versions": ["5.0"]
+          }
+        }' > "terraform-provider-securdenvault_${version}_manifest.json"
+
+        for file in `ls *.zip`; do
+            shasum -a 256 $file | sed 's/*//' >> "terraform-provider-securdenvault_${version}_SHA256SUMS"
+        done
+        shasum -a 256 *.json | sed 's/*//' >> "terraform-provider-securdenvault_${version}_SHA256SUMS"
+        
+        cd ..
+
+    - name: Setup GPG and sign
+      env:
+        VERSION: ${{ steps.get_version.outputs.version }}
+      run: |
+        version=$VERSION
+        mkdir -p ~/.gnupg
+        echo "allow-loopback-pinentry" >> ~/.gnupg/gpg-agent.conf
+        echo "pinentry-mode loopback" >> ~/.gnupg/gpg.conf
+        chmod 700 ~/.gnupg
+        echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --yes --no-tty --pinentry-mode loopback --passphrase "${{ secrets.GPG_PASSPHRASE }}" --import
+        echo "36AB0929E76749F8C9FE82B3C50AB7CBE7A52C36:6:" | gpg --import-ownertrust
+        gpg --yes --passphrase "${{ secrets.GPG_PASSPHRASE }}" --batch --no-tty --pinentry-mode loopback --output "build/terraform-provider-securdenvault_${version}_SHA256SUMS.sig" --detach-sig "build/terraform-provider-securdenvault_${version}_SHA256SUMS"
+
     - name: Install Hub
       run: |
         sudo apt-get update
