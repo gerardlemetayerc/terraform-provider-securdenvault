@@ -8,10 +8,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-type datasourceVaultPasswordApi struct {
-	Password   string    `json:"password"`
-}
-
 func datasourceVaultPassword() *schema.Resource {
 	return &schema.Resource{
 		Read:        datasourceVaultPasswordRead,
@@ -38,13 +34,13 @@ func datasourceVaultPasswordRead(d *schema.ResourceData, m interface{}) error {
 	uri       := fmt.Sprintf("/get_password?account_id=%s", accountId)
 	log.Printf("[DEBUG] datasourceVaultPasswordRead - Query: %s", uri)
 	client.SetDebug(true)
-	var resp datasourceVaultPasswordApi
+	var resp datasourceVaultPasswordReadApi
 	_, err := client.R().
 		SetResult(&resp).
 		Get(uri)
 
 	if err != nil {
-		log.Printf("[WARN] No password found for account %s", d.Get("name").(string))
+		log.Printf("[WARN] No password found for account %s", accountId)
 		d.SetId("")
 		return nil
 	}
