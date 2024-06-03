@@ -9,9 +9,9 @@ import (
 )
 
 type datasourceVaulFolderReadApi struct {
-	FolderName   string    `json:"folder_name"`
-	Id           string    `json:"id"`
-	Parent       string    `json:"parent"`
+	FolderName string `json:"folder_name"`
+	Id         string `json:"id"`
+	Parent     string `json:"parent"`
 }
 
 func datasourceVaultFolder() *schema.Resource {
@@ -26,7 +26,7 @@ func datasourceVaultFolder() *schema.Resource {
 			},
 			"parent": {
 				Type:        schema.TypeString,
-				Computed:    true;
+				Computed:    true,
 				Description: "Account ID in Securden.",				
 			},
 		},
@@ -35,8 +35,8 @@ func datasourceVaultFolder() *schema.Resource {
 
 func datasourceVaultFolderRead(d *schema.ResourceData, m interface{}) error {
 	client     := m.(*resty.Client)
-	folderName :=  d.Get("folder_name").(string)
-	uri        := fmt.Sprintf("/get_folders?search_text=%s", accountId)
+	folderName := d.Get("folder_name").(string)
+	uri        := fmt.Sprintf("/get_folders?search_text=%s", folderName) // Corrected variable name from accountId to folderName
 	log.Printf("[DEBUG] datasourceVaultFolderRead - Query: %s", uri)
 	client.SetDebug(true)
 	var resp datasourceVaulFolderReadApi
@@ -45,7 +45,7 @@ func datasourceVaultFolderRead(d *schema.ResourceData, m interface{}) error {
 		Get(uri)
 
 	if err != nil {
-		log.Printf("[WARN] No folder found for name %s", FolderName)
+		log.Printf("[WARN] No folder found for name %s", folderName) // Corrected variable name FolderName to folderName
 		d.SetId("")
 		return nil
 	}
@@ -53,6 +53,6 @@ func datasourceVaultFolderRead(d *schema.ResourceData, m interface{}) error {
 	log.Printf("[DEBUG] datasourceVaultFolderRead - Result: %#v", resp)
 	d.SetId(resp.Id)
 	d.Set("folder_name", resp.FolderName)
-	d.Set("parent", resp.FolderName)
+	d.Set("parent", resp.Parent) // Corrected to set the Parent field instead of FolderName twice
 	return nil
 }
