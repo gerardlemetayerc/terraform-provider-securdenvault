@@ -64,6 +64,9 @@ func Provider() *schema.Provider {
 		DataSourcesMap: map[string]*schema.Resource{
 			"securdenvault_password":      datasourceVaultPassword(),
 		},
+		ResourcesMap: map[string]*schema.Resource{
+			"securdenvault_account":       resourceAccount(),
+		},
 	}
 }
 
