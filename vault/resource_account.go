@@ -1,6 +1,7 @@
 package vault
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 
@@ -55,10 +56,10 @@ func resourceAccount() *schema.Resource {
 				Description: "Whether to generate a new password for the account. If true, a password is generated automatically if not provided.",
 			},
 			"password_change_reason": {
-				Type:         schema.TypeString,
-				Optional:     true,
-				Default:      "Updated by Terraform",
-				Description:  "Reason for the password change.",
+				Type:        schema.TypeString,
+				Optional:    true,
+				Default:     "Updated by Terraform",
+				Description: "Reason for the password change.",
 			},
 		},
 	}
@@ -67,11 +68,11 @@ func resourceAccount() *schema.Resource {
 func resourceAccountCreate(d *schema.ResourceData, m interface{}) error {
 	client := m.(*resty.Client)
 	account := map[string]interface{}{
-		"account_title":     d.Get("account_title").(string),
-		"account_name":      d.Get("account_name").(string),
-		"account_type":      d.Get("account_type").(string),
-		"personal_account":  d.Get("personal_account").(bool),
-		"folder_id":         d.Get("folder_id").(string),
+		"account_title":    d.Get("account_title").(string),
+		"account_name":     d.Get("account_name").(string),
+		"account_type":     d.Get("account_type").(string),
+		"personal_account": d.Get("personal_account").(bool),
+		"folder_id":        d.Get("folder_id").(string),
 	}
 
 	if generate, ok := d.GetOk("generate_password"); ok && generate.(bool) {
@@ -99,100 +100,99 @@ func resourceAccountCreate(d *schema.ResourceData, m interface{}) error {
 }
 
 func resourceAccountRead(d *schema.ResourceData, m interface{}) error {
-    client := m.(*resty.Client)
-    id := d.Id() // L'identifiant unique du compte
+	client := m.(*resty.Client)
+	id := d.Id() // L'identifiant unique du compte
 
-    // Construire l'URL pour l'endpoint de récupération des détails du compte
-    uri := fmt.Sprintf("/api/accounts/%s", id) // Assurez-vous que cet endpoint est correct
+	// Construire l'URL pour l'endpoint de récupération des détails du compte
+	uri := fmt.Sprintf("/api/accounts/%s", id) // Assurez-vous que cet endpoint est correct
 
-    log.Printf("[DEBUG] Reading account details for ID: %s", id)
-    resp, err := client.R().
-        SetHeader("Accept", "application/json").
-        Get(uri)
+	log.Printf("[DEBUG] Reading account details for ID: %s", id)
+	resp, err := client.R().
+		SetHeader("Accept", "application/json").
+		Get(uri)
 
-    if err != nil {
-        return fmt.Errorf("failed to retrieve account details: %s", err)
-    }
+	if err != nil {
+		return fmt.Errorf("failed to retrieve account details: %s", err)
+	}
 
-    if resp.StatusCode() != 200 {
-        return fmt.Errorf("API responded with non-200 status code: %d, response: %s", resp.StatusCode(), resp.String())
-    }
+	if resp.StatusCode() != 200 {
+		return fmt.Errorf("API responded with non-200 status code: %d, response: %s", resp.StatusCode(), resp.String())
+	}
 
-    var result struct {
-        Account struct {
-            AccountTitle    string `json:"account_title"`
-            AccountName     string `json:"account_name"`
-            AccountType     string `json:"account_type"`
-            PersonalAccount bool   `json:"personal_account"`
-            FolderID        string `json:"folder_id"`
-            Password        string `json:"password,omitempty"` // Si le mot de passe est retourné, ce qui est peu probable pour des raisons de sécurité
-        } `json:"account"`
-    }
+	var result struct {
+		Account struct {
+			AccountTitle    string `json:"account_title"`
+			AccountName     string `json:"account_name"`
+			AccountType     string `json:"account_type"`
+			PersonalAccount bool   `json:"personal_account"`
+			FolderID        string `json:"folder_id"`
+			Password        string `json:"password,omitempty"` // Si le mot de passe est retourné, ce qui est peu probable pour des raisons de sécurité
+		} `json:"account"`
+	}
 
-    if err := resp.Unmarshal(&result); err != nil {
-        return fmt.Errorf("failed to parse account details: %s", err)
-    }
+	if err := json.Unmarshal(resp.Body(), &result); err != nil {
+		return fmt.Errorf("failed to parse account details: %s", err)
+	}
 
-    // Mettre à jour l'état Terraform avec les données reçues
-    d.Set("account_title", result.Account.AccountTitle)
-    d.Set("account_name", result.Account.AccountName)
-    d.Set("account_type", result.Account.AccountType)
-    d.Set("personal_account", result.Account.PersonalAccount)
-    d.Set("folder_id", result.Account.FolderID)
-    // Conditionnellement définir le mot de passe si celui-ci est effectivement retourné
-    if result.Account.Password != "" {
-        d.Set("password", result.Account.Password)
-    }
+	// Mettre à jour l'état Terraform avec les données reçues
+	d.Set("account_title", result.Account.AccountTitle)
+	d.Set("account_name", result.Account.AccountName)
+	d.Set("account_type", result.Account.AccountType)
+	d.Set("personal_account", result.Account.PersonalAccount)
+	d.Set("folder_id", result.Account.FolderID)
+	// Conditionnellement définir le mot de passe si celui-ci est effectivement retourné
+	if result.Account.Password != "" {
+		d.Set("password", result.Account.Password)
+	}
 
-    return nil
+	return nil
 }
 
 func resourceAccountUpdate(d *schema.ResourceData, m interface{}) error {
-    client := m.(*resty.Client)
-    id := d.Id() // L'identifiant unique du compte
+	client := m.(*resty.Client)
+	id := d.Id() // L'identifiant unique du compte
 
-    updateData := map[string]interface{}{
-        "account_title":    d.Get("account_title").(string),
-        "account_name":     d.Get("account_name").(string),
-        "account_type":     d.Get("account_type").(string),
-        "personal_account": d.Get("personal_account").(bool),
-        "folder_id":        d.Get("folder_id").(string),
-    }
+	updateData := map[string]interface{}{
+		"account_title":    d.Get("account_title").(string),
+		"account_name":     d.Get("account_name").(string),
+		"account_type":     d.Get("account_type").(string),
+		"personal_account": d.Get("personal_account").(bool),
+		"folder_id":        d.Get("folder_id").(string),
+	}
 
-    if d.HasChange("password") {
-        passwordData := map[string]interface{}{
-            "password":              d.Get("password").(string),
-            "password_change_reason": d.Get("password_change_reason").(string),
-        }
-        // Appel API pour mise à jour du mot de passe
-        passwordUri := fmt.Sprintf("/api/accounts/%s/password", id)
-        log.Printf("[DEBUG] Updating password for account ID: %s", id)
-        _, err := client.R().
-            SetHeader("Content-Type", "application/json").
-            SetBody(passwordData).
-            Post(passwordUri)
-        
-        if err != nil {
-            return fmt.Errorf("failed to update password for account ID %s: %s", id, err)
-        }
-    }
+	if d.HasChange("password") {
+		passwordData := map[string]interface{}{
+			"password":               d.Get("password").(string),
+			"password_change_reason": d.Get("password_change_reason").(string),
+		}
+		// Appel API pour mise à jour du mot de passe
+		passwordUri := fmt.Sprintf("/api/accounts/%s/password", id)
+		log.Printf("[DEBUG] Updating password for account ID: %s", id)
+		_, err := client.R().
+			SetHeader("Content-Type", "application/json").
+			SetBody(passwordData).
+			Post(passwordUri)
 
-    // Appel API pour mise à jour des informations générales du compte
-    uri := fmt.Sprintf("/api/accounts/%s", id)
-    log.Printf("[DEBUG] Updating account ID: %s", id)
-    _, err := client.R().
-        SetHeader("Content-Type", "application/json").
-        SetBody(updateData).
-        Put(uri)
+		if err != nil {
+			return fmt.Errorf("failed to update password for account ID %s: %s", id, err)
+		}
+	}
 
-    if err != nil {
-        return fmt.Errorf("failed to update account ID %s: %s", id, err)
-    }
+	// Appel API pour mise à jour des informations générales du compte
+	uri := fmt.Sprintf("/api/accounts/%s", id)
+	log.Printf("[DEBUG] Updating account ID: %s", id)
+	_, err := client.R().
+		SetHeader("Content-Type", "application/json").
+		SetBody(updateData).
+		Put(uri)
 
-    // Relecture de l'état de la ressource pour synchroniser les changements
-    return resourceAccountRead(d, m)
+	if err != nil {
+		return fmt.Errorf("failed to update account ID %s: %s", id, err)
+	}
+
+	// Relecture de l'état de la ressource pour synchroniser les changements
+	return resourceAccountRead(d, m)
 }
-
 
 func resourceAccountDelete(d *schema.ResourceData, m interface{}) error {
 	client := m.(*resty.Client)
@@ -223,7 +223,7 @@ func generatePassword(client *resty.Client) (string, error) {
 		Password string `json:"password"`
 	}
 
-	if err := resp.Unmarshal(&result); err != nil {
+	if err := json.Unmarshal(resp.Body(), &result); err != nil {
 		return "", fmt.Errorf("failed to parse the password generation response: %s", err)
 	}
 

@@ -8,12 +8,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-type datasourceVaulFolderReadApi struct {
-	FolderName string `json:"folder_name"`
-	Id         string `json:"id"`
-	Parent     string `json:"parent"`
-}
-
 func datasourceVaultFolder() *schema.Resource {
 	return &schema.Resource{
 		Read:        datasourceVaultFolderRead,
@@ -27,16 +21,16 @@ func datasourceVaultFolder() *schema.Resource {
 			"parent": {
 				Type:        schema.TypeString,
 				Computed:    true,
-				Description: "Account ID in Securden.",				
+				Description: "Account ID in Securden.",
 			},
 		},
 	}
 }
 
 func datasourceVaultFolderRead(d *schema.ResourceData, m interface{}) error {
-	client     := m.(*resty.Client)
+	client := m.(*resty.Client)
 	folderName := d.Get("folder_name").(string)
-	uri        := fmt.Sprintf("/get_folders?search_text=%s", folderName) // Corrected variable name from accountId to folderName
+	uri := fmt.Sprintf("/get_folders?search_text=%s", folderName) // Corrected variable name from accountId to folderName
 	log.Printf("[DEBUG] datasourceVaultFolderRead - Query: %s", uri)
 	var resp datasourceVaulFolderReadApi
 	_, err := client.R().
