@@ -38,7 +38,6 @@ func datasourceVaultFolderRead(d *schema.ResourceData, m interface{}) error {
 	folderName := d.Get("folder_name").(string)
 	uri        := fmt.Sprintf("/get_folders?search_text=%s", folderName) // Corrected variable name from accountId to folderName
 	log.Printf("[DEBUG] datasourceVaultFolderRead - Query: %s", uri)
-	client.SetDebug(true)
 	var resp datasourceVaulFolderReadApi
 	_, err := client.R().
 		SetResult(&resp).
