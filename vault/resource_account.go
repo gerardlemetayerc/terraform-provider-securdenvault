@@ -85,7 +85,7 @@ func resourceAccountCreate(d *schema.ResourceData, m interface{}) error {
 		account["password"] = d.Get("password").(string)
 	}
 
-	uri := "/accounts/create"
+	uri := "/accounts/add_account"
 	resp, err := client.R().
 		SetHeader("Content-Type", "application/json").
 		SetBody(account).
