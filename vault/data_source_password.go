@@ -33,7 +33,6 @@ func datasourceVaultPasswordRead(d *schema.ResourceData, m interface{}) error {
 	accountId :=  d.Get("account_id").(string)
 	uri       := fmt.Sprintf("/get_password?account_id=%s", accountId)
 	log.Printf("[DEBUG] datasourceVaultPasswordRead - Query: %s", uri)
-	client.SetDebug(true)
 	var resp datasourceVaultPasswordReadApi
 	_, err := client.R().
 		SetResult(&resp).
