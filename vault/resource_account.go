@@ -43,6 +43,11 @@ func resourceAccount() *schema.Resource {
 				Required:    true,
 				Description: "The ID of the folder in which the account resides.",
 			},
+			"policy_id": {
+				Type:        schema.TypeString,
+				Required:    true,
+				Description: "The ID of the policy to use to generate account.",
+			},
 			"password": {
 				Type:        schema.TypeString,
 				Optional:    true,
@@ -76,7 +81,7 @@ func resourceAccountCreate(d *schema.ResourceData, m interface{}) error {
 	}
 
 	if generate, ok := d.GetOk("generate_password"); ok && generate.(bool) {
-		password, err := generatePassword(client)
+		password, err := generatePassword(d, m)
 		if err != nil {
 			return fmt.Errorf("error generating password: %s", err)
 		}
@@ -85,7 +90,7 @@ func resourceAccountCreate(d *schema.ResourceData, m interface{}) error {
 		account["password"] = d.Get("password").(string)
 	}
 
-	uri := "/accounts/add_account"
+	uri := "/add_account"
 	resp, err := client.R().
 		SetHeader("Content-Type", "application/json").
 		SetBody(account).
@@ -104,7 +109,7 @@ func resourceAccountRead(d *schema.ResourceData, m interface{}) error {
 	id := d.Id() // L'identifiant unique du compte
 
 	// Construire l'URL pour l'endpoint de récupération des détails du compte
-	uri := fmt.Sprintf("accounts/%s", id) // Assurez-vous que cet endpoint est correct
+	uri := fmt.Sprintf("/get_account_details/?account_id=%s", id) // Assurez-vous que cet endpoint est correct
 
 	log.Printf("[DEBUG] Reading account details for ID: %s", id)
 	resp, err := client.R().
@@ -158,6 +163,7 @@ func resourceAccountUpdate(d *schema.ResourceData, m interface{}) error {
 		"account_type":     d.Get("account_type").(string),
 		"personal_account": d.Get("personal_account").(bool),
 		"folder_id":        d.Get("folder_id").(string),
+		"account_id":       id,
 	}
 
 	if d.HasChange("password") {
@@ -179,7 +185,7 @@ func resourceAccountUpdate(d *schema.ResourceData, m interface{}) error {
 	}
 
 	// Appel API pour mise à jour des informations générales du compte
-	uri := fmt.Sprintf("/accounts/%s", id)
+	uri := fmt.Sprintf("/edit_account")
 	log.Printf("[DEBUG] Updating account ID: %s", id)
 	_, err := client.R().
 		SetHeader("Content-Type", "application/json").
@@ -197,7 +203,7 @@ func resourceAccountUpdate(d *schema.ResourceData, m interface{}) error {
 func resourceAccountDelete(d *schema.ResourceData, m interface{}) error {
 	client := m.(*resty.Client)
 	id := d.Id()
-	uri := fmt.Sprintf("/accounts/%s/delete", id)
+	uri := fmt.Sprintf("/delete_accounts?account_title=%s&reason=CMPDeletion&delete_permanently=false", id)
 
 	resp, err := client.R().Delete(uri)
 	if err != nil {
@@ -211,8 +217,10 @@ func resourceAccountDelete(d *schema.ResourceData, m interface{}) error {
 	return nil
 }
 
-func generatePassword(client *resty.Client) (string, error) {
-	uri := "/generate_password"
+func generatePassword(d *schema.ResourceData, m interface{}) (string, error) {
+	client := m.(*resty.Client)
+	policy_id := d.Get("policy_id").(string)
+	uri := fmt.Sprintf("/generate_password?policy_name=%s", policy_id)
 	resp, err := client.R().Get(uri)
 	if err != nil {
 		return "", fmt.Errorf("error generating password: %s", err)
