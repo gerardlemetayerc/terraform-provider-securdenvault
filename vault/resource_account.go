@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"net/url"
 	"strconv"
 
 	"github.com/go-resty/resty/v2"
@@ -218,8 +217,10 @@ func resourceAccountDelete(d *schema.ResourceData, m interface{}) error {
 func generatePassword(d *schema.ResourceData, m interface{}) (string, error) {
 	client := m.(*resty.Client)
 	policy_id := d.Get("policy_id").(string)
-	uri := fmt.Sprintf("/generate_password?policy_name=%s", url.QueryEscape(policy_id))
-	resp, err := client.R().Get(uri)
+	resp, err := client.R().
+		SetHeader("Accept", "application/json").
+		SetQueryString(fmt.Sprintf("policy_name=%s", policy_id)).
+		Get("/generate_password")
 	if err != nil {
 		return "", fmt.Errorf("error generating password: %s", err)
 	}
