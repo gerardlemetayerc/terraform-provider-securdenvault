@@ -47,7 +47,6 @@ func resourceAccount() *schema.Resource {
 			},
 			"password_policy_name": {
 				Type:        schema.TypeString,
-				Required:    true,
 				Optional:    true,
 				Description: "The ID of the policy to use to generate account.",
 			},
