@@ -218,6 +218,7 @@ func generatePassword(d *schema.ResourceData, m interface{}) (string, error) {
 	client := m.(*resty.Client)
 	policy_id := d.Get("policy_id").(string)
 	resp, err := client.R().
+		SetDebug(true).
 		SetHeader("Accept", "application/json").
 		SetQueryString(fmt.Sprintf("policy_name=%s", policy_id)).
 		Get("/generate_password")
