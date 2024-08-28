@@ -86,6 +86,7 @@ func resourceAccountCreate(d *schema.ResourceData, m interface{}) error {
 			return fmt.Errorf("error generating password: %s", err)
 		}
 		account["password"] = password
+		d.Set("password", password)
 	} else {
 		account["password"] = d.Get("password").(string)
 	}
@@ -93,14 +94,15 @@ func resourceAccountCreate(d *schema.ResourceData, m interface{}) error {
 	uri := "/add_account"
 	resp, err := client.R().
 		SetHeader("Content-Type", "application/json").
+		SetResult(apiAccountCreationResponse{}).
 		SetBody(account).
 		Post(uri)
 
 	if err != nil {
 		return fmt.Errorf("error creating account: %s", err)
 	}
-
-	d.SetId(resp.String())
+	r := resp.Result().(*apiAccountCreationResponse)
+	d.SetId(r.Id)
 	return resourceAccountRead(d, m)
 }
 
@@ -109,7 +111,7 @@ func resourceAccountRead(d *schema.ResourceData, m interface{}) error {
 	id := d.Id() // L'identifiant unique du compte
 
 	// Construire l'URL pour l'endpoint de récupération des détails du compte
-	uri := fmt.Sprintf("/get_account_details/?account_id=%s", id) // Assurez-vous que cet endpoint est correct
+	uri := fmt.Sprintf("/get_account_details?account_id=%s", id) // Assurez-vous que cet endpoint est correct
 
 	log.Printf("[DEBUG] Reading account details for ID: %s", id)
 	resp, err := client.R().
@@ -131,11 +133,10 @@ func resourceAccountRead(d *schema.ResourceData, m interface{}) error {
 			AccountType     string `json:"account_type"`
 			PersonalAccount bool   `json:"personal_account"`
 			FolderID        string `json:"folder_id"`
-			Password        string `json:"password,omitempty"` // Si le mot de passe est retourné, ce qui est peu probable pour des raisons de sécurité
 		} `json:"account"`
 	}
 
-	if err := json.Unmarshal(resp.Body(), &result); err != nil {
+	if err := json.Unmarshal(resp.Body(), &resp); err != nil {
 		return fmt.Errorf("failed to parse account details: %s", err)
 	}
 
@@ -145,10 +146,6 @@ func resourceAccountRead(d *schema.ResourceData, m interface{}) error {
 	d.Set("account_type", result.Account.AccountType)
 	d.Set("personal_account", result.Account.PersonalAccount)
 	d.Set("folder_id", result.Account.FolderID)
-	// Conditionnellement définir le mot de passe si celui-ci est effectivement retourné
-	if result.Account.Password != "" {
-		d.Set("password", result.Account.Password)
-	}
 
 	return nil
 }
