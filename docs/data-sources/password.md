@@ -1,6 +1,7 @@
 ---
 layout: "securdenvault"
 page_title: "Securden Vault Datasource: password"
+subcategory: "Account Management"
 description: |-
   Use this data source to get information about a specific password stored in Securden Password Vault.
 ---

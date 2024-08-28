@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"net/url"
 	"strconv"
 
 	"github.com/go-resty/resty/v2"
@@ -44,14 +45,16 @@ func resourceAccount() *schema.Resource {
 				Required:    true,
 				Description: "The ID of the folder in which the account resides.",
 			},
-			"policy_id": {
+			"password_policy_name": {
 				Type:        schema.TypeString,
 				Required:    true,
+				Optional:    true,
 				Description: "The ID of the policy to use to generate account.",
 			},
 			"password": {
 				Type:        schema.TypeString,
 				Optional:    true,
+				Computed:    true,
 				Sensitive:   true,
 				Description: "The password of the account. Either provide a password or set generate_password to true.",
 			},
@@ -128,13 +131,11 @@ func resourceAccountRead(d *schema.ResourceData, m interface{}) error {
 	}
 
 	var result struct {
-		Account struct {
-			AccountTitle    string `json:"account_title"`
-			AccountName     string `json:"account_name"`
-			AccountType     string `json:"account_type"`
-			PersonalAccount bool   `json:"personal_account"`
-			FolderID        string `json:"folder_id"`
-		} `json:"account"`
+		AccountTitle    string `json:"account_title"`
+		AccountName     string `json:"account_name"`
+		AccountType     string `json:"account_type"`
+		PersonalAccount bool   `json:"personal_account"`
+		FolderID        string `json:"folder_id"`
 	}
 
 	if err := json.Unmarshal(resp.Body(), &resp); err != nil {
@@ -142,11 +143,11 @@ func resourceAccountRead(d *schema.ResourceData, m interface{}) error {
 	}
 
 	// Mettre à jour l'état Terraform avec les données reçues
-	d.Set("account_title", result.Account.AccountTitle)
-	d.Set("account_name", result.Account.AccountName)
-	d.Set("account_type", result.Account.AccountType)
-	d.Set("personal_account", result.Account.PersonalAccount)
-	d.Set("folder_id", result.Account.FolderID)
+	d.Set("account_title", result.AccountTitle)
+	d.Set("account_name", result.AccountName)
+	d.Set("account_type", result.AccountType)
+	d.Set("personal_account", result.PersonalAccount)
+	d.Set("folder_id", result.FolderID)
 
 	return nil
 }
@@ -218,7 +219,7 @@ func resourceAccountDelete(d *schema.ResourceData, m interface{}) error {
 func generatePassword(d *schema.ResourceData, m interface{}) (string, error) {
 	client := m.(*resty.Client)
 	policy_id := d.Get("policy_id").(string)
-	uri := fmt.Sprintf("/generate_password?policy_name=%s", policy_id)
+	uri := url.QueryEscape(fmt.Sprintf("/generate_password?policy_name=%s", policy_id))
 	resp, err := client.R().Get(uri)
 	if err != nil {
 		return "", fmt.Errorf("error generating password: %s", err)
