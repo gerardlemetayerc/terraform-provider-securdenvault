@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"strconv"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -102,7 +103,7 @@ func resourceAccountCreate(d *schema.ResourceData, m interface{}) error {
 		return fmt.Errorf("error creating account: %s", err)
 	}
 	r := resp.Result().(*apiAccountCreationResponse)
-	d.SetId(r.Id)
+	d.SetId(strconv.Itoa(r.Id))
 	return resourceAccountRead(d, m)
 }
 
